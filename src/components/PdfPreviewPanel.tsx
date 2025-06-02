@@ -3,6 +3,7 @@ import { useState } from "react";
 import pdfFile from "../data/report.pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
+import type { ReportJson } from "../types/report";
 
 // react-pdf worker 설정
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -12,7 +13,7 @@ const options = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
 };
 
-export function PdfPreviewPanel() {
+export function PdfPreviewPanel({ jsonData }: { jsonData: ReportJson }) {
   const [totalPageNum, setTotalPageNum] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
