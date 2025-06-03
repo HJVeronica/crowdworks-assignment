@@ -1,5 +1,5 @@
 import { Document, Page, pdfjs } from "react-pdf";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import pdfFile from "../data/report.pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -15,8 +15,14 @@ const options = {
 
 export function PdfPreviewPanel({
   sectionGroups,
+  hoveredGroupIdx,
+  setHoveredGroupIdx,
+  selectedGroupIdx,
 }: {
   sectionGroups: SectionGroup[];
+  hoveredGroupIdx: number | null;
+  setHoveredGroupIdx: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedGroupIdx: number | null;
 }) {
   // PDF 페이지 수, 현재 페이지, PDF 렌더링 크기 상태
   const [totalPageNum, setTotalPageNum] = useState<number>(1);
@@ -28,8 +34,21 @@ export function PdfPreviewPanel({
     pdfHeight: 0,
   });
 
-  // 현재 hover 중인 그룹 인덱스
-  const [hoveredGroupIdx, setHoveredGroupIdx] = useState<number | null>(null);
+  // 각 오버레이 박스의 DOM 참조 저장
+  const overlayRefs = useRef<{ [groupIdx: number]: HTMLDivElement | null }>({});
+
+  useEffect(() => {
+    // 선택된 오버레이 박스로 스크롤 이동
+    if (selectedGroupIdx == null) return;
+    const el = overlayRefs.current[selectedGroupIdx];
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
+  }, [selectedGroupIdx, currentPage]);
 
   // PDF 페이지 렌더링 성공 시 크기 정보 저장
   function handlePageRenderSuccess(page: {
@@ -123,20 +142,26 @@ export function PdfPreviewPanel({
                 pageNumber={currentPage}
                 onRenderSuccess={handlePageRenderSuccess}
               />
-              {/* 그룹별 오버레이: hover 시만 강조 */}
+              {/* 그룹별 오버레이: hover 또는 클릭 시 강조 */}
               {groupBoxes.map((group) => {
                 const bbox = group.bbox;
                 if (!bbox) return null;
                 const style = pdfToViewport(bbox, pageSize);
                 const isHovered = hoveredGroupIdx === group.groupIdx;
+                const isSelected = selectedGroupIdx === group.groupIdx;
                 return (
                   <div
                     key={group.groupIdx}
-                    className={`absolute rounded ${
-                      isHovered
+                    // 각 오버레이 박스의 ref 저장
+                    ref={(el) => {
+                      overlayRefs.current[group.groupIdx] = el;
+                    }}
+                    // hover 또는 클릭 시 노란색 강조
+                    className={`absolute rounded cursor-pointer transition-colors duration-200 ${
+                      isHovered || isSelected
                         ? "border-2 border-yellow-400 bg-yellow-200/20"
                         : ""
-                    } cursor-pointer`}
+                    }`}
                     style={{
                       left: style.left,
                       top: style.top,
@@ -146,6 +171,7 @@ export function PdfPreviewPanel({
                       pointerEvents: "auto",
                       zIndex: 10,
                     }}
+                    // 마우스 오버 시 hover 상태 변경
                     onMouseEnter={() => setHoveredGroupIdx(group.groupIdx)}
                     onMouseLeave={() => setHoveredGroupIdx(null)}
                   />
