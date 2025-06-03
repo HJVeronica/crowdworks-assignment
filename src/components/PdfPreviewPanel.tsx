@@ -3,8 +3,7 @@ import { useState } from "react";
 import pdfFile from "../data/report.pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import type { ReportJson } from "../types/report";
-import getGroupBoundingBox from "../utils/getGroupBoundingBox";
+import type { SectionGroup } from "../utils/createSectionGroups";
 
 // react-pdf worker 설정
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -14,7 +13,11 @@ const options = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
 };
 
-export function PdfPreviewPanel({ jsonData }: { jsonData: ReportJson }) {
+export function PdfPreviewPanel({
+  sectionGroups,
+}: {
+  sectionGroups: SectionGroup[];
+}) {
   // PDF 페이지 수, 현재 페이지, PDF 렌더링 크기 상태
   const [totalPageNum, setTotalPageNum] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -73,21 +76,10 @@ export function PdfPreviewPanel({ jsonData }: { jsonData: ReportJson }) {
   }
 
   // 현재 페이지의 그룹 bbox 리스트 구하기
-  const groupBoxes = (jsonData.groups ?? [])
-    .map((group) => getGroupBoundingBox(group, jsonData.texts))
-    .filter(
-      (
-        box
-      ): box is {
-        l: number;
-        t: number;
-        r: number;
-        b: number;
-        page_no: number;
-      } => !!box && box.page_no === currentPage
-    );
+  const groupBoxes = sectionGroups
+    .map((group) => ({ ...group, bbox: group.bbox }))
+    .filter((group) => group.bbox && group.bbox.page_no === currentPage);
 
-  // PDF 문서 전체 로드 성공 시 페이지 수 저장
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setTotalPageNum(numPages);
     setCurrentPage(1);
@@ -132,12 +124,14 @@ export function PdfPreviewPanel({ jsonData }: { jsonData: ReportJson }) {
                 onRenderSuccess={handlePageRenderSuccess}
               />
               {/* 그룹별 오버레이: hover 시만 강조 */}
-              {groupBoxes.map((box, idx) => {
-                const style = pdfToViewport(box, pageSize);
-                const isHovered = hoveredGroupIdx === idx;
+              {groupBoxes.map((group) => {
+                const bbox = group.bbox;
+                if (!bbox) return null;
+                const style = pdfToViewport(bbox, pageSize);
+                const isHovered = hoveredGroupIdx === group.groupIdx;
                 return (
                   <div
-                    key={idx}
+                    key={group.groupIdx}
                     className={`absolute rounded ${
                       isHovered
                         ? "border-2 border-yellow-400 bg-yellow-200/20"
@@ -152,7 +146,7 @@ export function PdfPreviewPanel({ jsonData }: { jsonData: ReportJson }) {
                       pointerEvents: "auto",
                       zIndex: 10,
                     }}
-                    onMouseEnter={() => setHoveredGroupIdx(idx)}
+                    onMouseEnter={() => setHoveredGroupIdx(group.groupIdx)}
                     onMouseLeave={() => setHoveredGroupIdx(null)}
                   />
                 );
