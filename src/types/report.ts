@@ -10,6 +10,15 @@ export interface Prov {
   charspan?: number[];
 }
 
+export interface Group {
+  self_ref: string;
+  parent: { $ref: string };
+  children: { $ref: string }[];
+  content_layer: string;
+  name: string;
+  label: string;
+}
+
 export interface TextBlock {
   self_ref: string;
   text?: string;
@@ -21,5 +30,5 @@ export interface TextBlock {
 
 export interface ReportJson {
   texts: TextBlock[];
-  // 필요시 groups, tables 등 추가
+  groups: Group[];
 }
