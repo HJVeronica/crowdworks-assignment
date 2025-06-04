@@ -98,21 +98,21 @@ export function PdfPreviewPanel({
 
     const left = bbox.l * scaleX;
     const right = bbox.r * scaleX;
-    const top = (pdfHeight - bbox.t) * scaleY;
+    const top = (pdfHeight - bbox.t) * scaleY - 5;
     const bottom = (pdfHeight - bbox.b) * scaleY;
 
     return {
       left,
       top,
       width: right - left,
-      height: bottom - top,
+      height: bottom - top + 5,
     };
   }
 
-  // 현재 페이지의 그룹 bbox 리스트 구하기
-  const groupBoxes = sectionGroups
-    .map((group) => ({ ...group, bbox: group.bbox }))
-    .filter((group) => group.bbox && group.bbox.page_no === currentPage);
+  // 현재 페이지의 섹션 bbox 리스트 구하기 (모든 contents의 bbox를 합친 값)
+  const sectionBoxes = sectionGroups.filter(
+    (section) => section.bbox && section.bbox.page_no === currentPage
+  );
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setTotalPageNum(numPages);
@@ -162,18 +162,18 @@ export function PdfPreviewPanel({
                 onRenderSuccess={handlePageRenderSuccess}
               />
               {/* 그룹별 오버레이: hover 또는 클릭 시 강조 */}
-              {groupBoxes.map((group) => {
-                const bbox = group.bbox;
+              {sectionBoxes.map((section) => {
+                const bbox = section.bbox;
                 if (!bbox) return null;
                 const style = pdfToViewport(bbox, pageSize);
-                const isHovered = hoveredGroupIdx === group.groupIdx;
-                const isSelected = selectedGroupIdx === group.groupIdx;
+                const isHovered = hoveredGroupIdx === section.groupIdx;
+                const isSelected = selectedGroupIdx === section.groupIdx;
                 return (
                   <div
-                    key={group.groupIdx}
+                    key={section.groupIdx}
                     // 각 오버레이 박스의 ref 저장
                     ref={(el) => {
-                      overlayRefs.current[group.groupIdx] = el;
+                      overlayRefs.current[section.groupIdx] = el;
                     }}
                     // hover 또는 클릭 시 노란색 강조
                     className={`absolute rounded cursor-pointer transition-colors duration-200 ${
@@ -191,7 +191,7 @@ export function PdfPreviewPanel({
                       zIndex: 10,
                     }}
                     // 마우스 오버 시 hover 상태 변경
-                    onMouseEnter={() => setHoveredGroupIdx(group.groupIdx)}
+                    onMouseEnter={() => setHoveredGroupIdx(section.groupIdx)}
                     onMouseLeave={() => setHoveredGroupIdx(null)}
                   />
                 );
