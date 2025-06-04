@@ -1,5 +1,5 @@
 import { Document, Page, pdfjs } from "react-pdf";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import pdfFile from "../data/report.pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -36,6 +36,21 @@ export function PdfPreviewPanel({
 
   // 각 오버레이 박스의 DOM 참조 저장
   const overlayRefs = useRef<{ [groupIdx: number]: HTMLDivElement | null }>({});
+
+  // PDF 컨테이너 width 측정
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    }
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   useEffect(() => {
     // 선택된 오버레이 박스로 스크롤 이동
@@ -116,9 +131,13 @@ export function PdfPreviewPanel({
   };
 
   return (
-    <div className="w-1/2 flex flex-col border-r border-gray-300">
+    <div className="w-1/2 flex flex-col border-r border-gray-300 h-screen max-h-screen overflow-y-auto">
       {/* PDF 미리보기 영역 */}
-      <div className="flex-1 flex items-center justify-center bg-white m-3 rounded-lg shadow-sm">
+      <div
+        ref={containerRef}
+        className="flex-1 flex justify-center bg-white m-3 rounded-lg shadow-sm h-full overflow-y-auto"
+        style={{ minHeight: 0 }}
+      >
         <div className="w-full flex flex-col items-center">
           <Document
             file={pdfFile}
@@ -130,16 +149,16 @@ export function PdfPreviewPanel({
             onLoadSuccess={onDocumentLoadSuccess}
             options={options}
           >
-            {/* PDF Page와 오버레이 박스를 같은 relative 컨테이너에 렌더링 */}
             <div
               style={{
                 position: "relative",
-                width: pageSize.width,
-                height: pageSize.height,
+                width: containerWidth,
+                minHeight: 0,
               }}
             >
               <Page
                 pageNumber={currentPage}
+                width={containerWidth}
                 onRenderSuccess={handlePageRenderSuccess}
               />
               {/* 그룹별 오버레이: hover 또는 클릭 시 강조 */}
