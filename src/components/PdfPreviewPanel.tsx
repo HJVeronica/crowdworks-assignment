@@ -18,11 +18,13 @@ export function PdfPreviewPanel({
   hoveredGroupIdx,
   setHoveredGroupIdx,
   selectedGroupIdx,
+  resetScrollTrigger,
 }: {
   sectionGroups: SectionGroup[];
   hoveredGroupIdx: number | null;
   setHoveredGroupIdx: React.Dispatch<React.SetStateAction<number | null>>;
   selectedGroupIdx: number | null;
+  resetScrollTrigger: number;
 }) {
   // PDF 페이지 수, 현재 페이지, PDF 렌더링 크기 상태
   const [totalPageNum, setTotalPageNum] = useState<number>(1);
@@ -64,6 +66,11 @@ export function PdfPreviewPanel({
       });
     }
   }, [selectedGroupIdx, currentPage]);
+
+  // resetScrollTrigger가 바뀔 때마다 스크롤 top 이동
+  useEffect(() => {
+    if (containerRef.current) containerRef.current.scrollTop = 0;
+  }, [resetScrollTrigger]);
 
   // PDF 페이지 렌더링 성공 시 크기 정보 저장
   function handlePageRenderSuccess(page: {
