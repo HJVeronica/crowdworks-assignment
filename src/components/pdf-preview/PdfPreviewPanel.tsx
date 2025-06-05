@@ -1,9 +1,10 @@
 import { Document, Page, pdfjs } from "react-pdf";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import pdfFile from "../data/report.pdf";
+import pdfFile from "../../data/report.pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import type { SectionGroup } from "../utils/createSectionGroups";
+import { OverlayBox } from "./OverlayBox";
+import type { PdfPreviewPanelProps } from "../../types/pdf-preview/types";
 
 // react-pdf worker 설정
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -19,13 +20,7 @@ export function PdfPreviewPanel({
   setHoveredGroupIdx,
   selectedGroupIdx,
   resetScrollTrigger,
-}: {
-  sectionGroups: SectionGroup[];
-  hoveredGroupIdx: number | null;
-  setHoveredGroupIdx: React.Dispatch<React.SetStateAction<number | null>>;
-  selectedGroupIdx: number | null;
-  resetScrollTrigger: number;
-}) {
+}: PdfPreviewPanelProps) {
   // PDF 페이지 수, 현재 페이지, PDF 렌더링 크기 상태
   const [totalPageNum, setTotalPageNum] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -36,7 +31,7 @@ export function PdfPreviewPanel({
     pdfHeight: 0,
   });
 
-  // 각 오버레이 박스의 DOM 참조 저장
+  // 각 오버레이 박스의 DOM Refs
   const overlayRefs = useRef<{ [groupIdx: number]: HTMLDivElement | null }>({});
 
   // PDF 컨테이너 width 측정
@@ -176,28 +171,19 @@ export function PdfPreviewPanel({
                 const isHovered = hoveredGroupIdx === section.groupIdx;
                 const isSelected = selectedGroupIdx === section.groupIdx;
                 return (
-                  <div
+                  <OverlayBox
                     key={section.groupIdx}
-                    // 각 오버레이 박스의 ref 저장
-                    ref={(el) => {
+                    innerRef={(el) => {
                       overlayRefs.current[section.groupIdx] = el;
                     }}
-                    // hover 또는 클릭 시 노란색 강조
-                    className={`absolute rounded cursor-pointer transition-colors duration-200 ${
-                      isHovered || isSelected
-                        ? "border-2 border-yellow-400 bg-yellow-200/20"
-                        : ""
-                    }`}
                     style={{
                       left: style.left,
                       top: style.top,
                       width: style.width,
                       height: style.height,
-                      position: "absolute",
-                      pointerEvents: "auto",
-                      zIndex: 10,
                     }}
-                    // 마우스 오버 시 hover 상태 변경
+                    isHovered={isHovered}
+                    isSelected={isSelected}
                     onMouseEnter={() => setHoveredGroupIdx(section.groupIdx)}
                     onMouseLeave={() => setHoveredGroupIdx(null)}
                   />
