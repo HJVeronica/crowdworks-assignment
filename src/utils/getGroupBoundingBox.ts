@@ -1,4 +1,4 @@
-import type { Group, TextBlock } from "../types/report";
+import type { Group, TextBlock } from "../types/parsed-pdf/types";
 
 // 그룹 내 모든 텍스트의 bbox를 합쳐 가장 넓은 영역의 bounding box를 반환
 const getGroupBoundingBox = (group: Group, texts: TextBlock[]) => {

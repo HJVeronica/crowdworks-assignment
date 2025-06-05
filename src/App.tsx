@@ -1,9 +1,9 @@
 import jsonData from "./data/report.json";
-import { JsonDataPanel } from "./components/JsonDataPanel";
-import { PdfPreviewPanel } from "./components/PdfPreviewPanel";
+import { JsonDataPanel } from "./components/json-data/JsonDataPanel";
+import { PdfPreviewPanel } from "./components/pdf-preview/PdfPreviewPanel";
 import { createSectionGroups } from "./utils/createSectionGroups";
 import { useState } from "react";
-import type { ReportJson } from "./types/report";
+import type { ReportJson } from "./types/parsed-pdf/types";
 
 // 원본 jsonData에서 필요한 필드만 추출하여 ReportJson 타입으로 변환
 function toReportJson(raw: unknown): ReportJson {
@@ -19,28 +19,43 @@ function toReportJson(raw: unknown): ReportJson {
 
 function App() {
   const sectionGroups = createSectionGroups(toReportJson(jsonData));
-  const [hoveredGroupIdx, setHoveredGroupIdx] = useState<number | null>(null);
-  const [selectedGroupIdx, setSelectedGroupIdx] = useState<number | null>(null);
-  const [resetScrollTrigger, setResetScrollTrigger] = useState(0);
+  const [panelState, setPanelState] = useState({
+    hoveredGroupIdx: null as number | null,
+    selectedGroupIdx: null as number | null,
+    resetScrollTrigger: 0,
+  });
 
   function handleTabChange() {
-    setResetScrollTrigger((v) => v + 1);
+    setPanelState((s) => ({
+      ...s,
+      resetScrollTrigger: s.resetScrollTrigger + 1,
+    }));
   }
 
   return (
     <div className="w-screen h-screen flex bg-gray-50">
       <PdfPreviewPanel
         sectionGroups={sectionGroups}
-        hoveredGroupIdx={hoveredGroupIdx}
-        setHoveredGroupIdx={setHoveredGroupIdx}
-        selectedGroupIdx={selectedGroupIdx}
-        resetScrollTrigger={resetScrollTrigger}
+        hoveredGroupIdx={panelState.hoveredGroupIdx}
+        setHoveredGroupIdx={(idx: number | null) =>
+          setPanelState((s) => ({
+            ...s,
+            hoveredGroupIdx: idx as number | null,
+          }))
+        }
+        selectedGroupIdx={panelState.selectedGroupIdx}
+        resetScrollTrigger={panelState.resetScrollTrigger}
       />
       <JsonDataPanel
         sectionGroups={sectionGroups}
-        hoveredGroupIdx={hoveredGroupIdx}
-        selectedGroupIdx={selectedGroupIdx}
-        setSelectedGroupIdx={setSelectedGroupIdx}
+        hoveredGroupIdx={panelState.hoveredGroupIdx}
+        selectedGroupIdx={panelState.selectedGroupIdx}
+        setSelectedGroupIdx={(idx: number | null) =>
+          setPanelState((s) => ({
+            ...s,
+            selectedGroupIdx: idx as number | null,
+          }))
+        }
         onTabChange={handleTabChange}
       />
     </div>

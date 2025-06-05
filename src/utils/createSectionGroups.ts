@@ -4,7 +4,7 @@ import type {
   Table,
   Picture,
   TextBlock,
-} from "../types/report";
+} from "../types/parsed-pdf/types";
 import getGroupBoundingBox from "./getGroupBoundingBox";
 
 export interface SectionGroup {
